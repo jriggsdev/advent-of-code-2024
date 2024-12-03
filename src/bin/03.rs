@@ -20,7 +20,31 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    None
+    let re = Regex::new(r"mul\(\d+,\d+\)|do\(\)|don't\(\)").unwrap();
+
+    let instructions = re.captures_iter(input)
+        .map(|c| c.get(0).unwrap().as_str());
+
+    let mut mul_on = true;
+    let mut total = 0;
+    for instruction in instructions {
+        if instruction.starts_with("mul") && mul_on {
+            let args: Vec<u32> = instruction
+                .replace("mul(", "")
+                .replace(")", "")
+                .split(",")
+                .map(|s| s.parse::<u32>().unwrap())
+                .collect();
+
+            total += args[0] * args[1];
+        } else if instruction == "don't()" {
+            mul_on = false;
+        } else  if instruction == "do()"{
+            mul_on = true;
+        }
+    }
+
+    Some(total)
 }
 
 #[cfg(test)]
@@ -35,7 +59,7 @@ mod tests {
 
     #[test]
     fn test_part_two() {
-        let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        let result = part_two(&advent_of_code::template::read_file_part("examples", DAY, 2));
+        assert_eq!(result, Some(48));
     }
 }

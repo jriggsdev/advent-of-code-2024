@@ -57,7 +57,35 @@ pub fn part_one(input: &str) -> Option<u32> {
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    None
+    let lines: Vec<Vec<char>> = input.lines()
+        .map(|line| line.chars()
+            .filter(|char| char != &'\n')
+            .collect()
+        ).collect();
+
+    let mut count = 0;
+    for i in 0..lines.len() - 2 {
+        for j in 0..lines[i].len() - 2 {
+            if lines[i][j] != 'M' && lines[i][j] != 'S' {
+                continue;
+            }
+
+            let check_other_diagonal = if lines[i][j] == 'M' {
+                lines[i+1][j+1] == 'A' && lines[i+2][j+2] == 'S'
+            } else {
+                lines[i+1][j+1] == 'A' && lines[i+2][j+2] == 'M'
+            };
+
+            if check_other_diagonal {
+                if lines[i][j+2] == 'M' && lines[i+2][j] == 'S'
+                    || lines[i][j+2] == 'S' && lines[i+2][j] == 'M' {
+                    count += 1;
+                }
+            }
+        }
+    }
+
+    Some(count)
 }
 
 #[cfg(test)]
@@ -73,6 +101,6 @@ mod tests {
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, None);
+        assert_eq!(result, Some(9));
     }
 }

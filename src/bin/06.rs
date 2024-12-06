@@ -29,15 +29,17 @@ struct Map {
 
 #[derive(Debug)]
 struct Guard {
-    position: (u32, u32),
-    direction: Direction,
+    initial_position: (u32, u32),
+    initial_direction: Direction,
+    current_position: (u32, u32),
+    current_direction: Direction,
 }
 
 impl Guard {
     fn step(&mut self, map: &mut Map) -> Result<(), StepError> {
-        let mut new_x: i32 = self.position.0 as i32;
-        let mut new_y: i32 = self.position.1 as i32;
-        match self.direction {
+        let mut new_x: i32 = self.current_position.0 as i32;
+        let mut new_y: i32 = self.current_position.1 as i32;
+        match self.current_direction {
             Direction::North => {
                 new_x -= 1;
             },
@@ -59,29 +61,39 @@ impl Guard {
             return Err(StepError::Blocked);
         }
 
-        if map.spaces[new_x as usize][new_y as usize] == Space::Visited(self.direction.clone()) {
+        if map.spaces[new_x as usize][new_y as usize] == Space::Visited(self.current_direction.clone()) {
             return Err(StepError::CaughtInLoop)
         }
 
-        self.position.0 = new_x as u32;
-        self.position.1 = new_y as u32;
-        map.spaces[self.position.0 as usize][self.position.1 as usize] = Space::Visited(self.direction.clone());
+        self.current_position.0 = new_x as u32;
+        self.current_position.1 = new_y as u32;
+        map.spaces[self.current_position.0 as usize][self.current_position.1 as usize] = Space::Visited(self.current_direction.clone());
         Ok(())
     }
 
     fn turn(&mut self) {
-        match self.direction {
-            Direction::North => self.direction = Direction::East,
-            Direction::East => self.direction = Direction::South,
-            Direction::South => self.direction = Direction::West,
-            Direction::West => self.direction = Direction::North,
+        match self.current_direction {
+            Direction::North => self.current_direction = Direction::East,
+            Direction::East => self.current_direction = Direction::South,
+            Direction::South => self.current_direction = Direction::West,
+            Direction::West => self.current_direction = Direction::North,
         }
+    }
+
+    fn reset(&mut self) {
+        self.current_position = self.initial_position;
+        self.current_direction = self.initial_direction.clone();
     }
 }
 
 fn parse_input(input: &str) -> (Map, Guard) {
     let mut map: Map = Map { spaces: vec!() };
-    let mut guard: Guard = Guard { position: (0, 0), direction: Direction::North };
+    let mut guard: Guard = Guard {
+        initial_position: (0, 0),
+        initial_direction: Direction::North,
+        current_position: (0, 0),
+        current_direction: Direction::North
+    };
 
     for line in input.lines() {
         if line.is_empty() {
@@ -98,8 +110,10 @@ fn parse_input(input: &str) -> (Map, Guard) {
                     current_map_line.push(Space::Unvisited);
                 },
                 '^' => {
-                    guard.position.0 = map.spaces.len() as u32;
-                    guard.position.1 = current_map_line.len() as u32;
+                    guard.initial_position.0 = map.spaces.len() as u32;
+                    guard.initial_position.1 = current_map_line.len() as u32;
+                    guard.current_position.0 = map.spaces.len() as u32;
+                    guard.current_position.1 = current_map_line.len() as u32;
                     current_map_line.push(Space::Visited(Direction::North));
                 },
                 _ => {
@@ -146,7 +160,6 @@ pub fn part_two(input: &str) -> Option<u32> {
     let (map, mut guard) = parse_input(input);
 
     let mut initial_run_map = map.clone();
-    let guard_starting_point = guard.position;
     loop {
         let step_result = guard.step(&mut initial_run_map);
         match step_result {
@@ -169,11 +182,10 @@ pub fn part_two(input: &str) -> Option<u32> {
         for j in 0..initial_run_map.spaces[i].len() {
             match &initial_run_map.spaces[i][j] {
                 Space::Visited(_) => {
-                    if guard_starting_point != (i as u32, j as u32) {
+                    if guard.initial_position != (i as u32, j as u32) {
                         let mut new_map = map.clone();
                         new_map.spaces[i][j] = Space::Obstacle;
-                        guard.position = guard_starting_point;
-                        guard.direction = Direction::North;
+                        guard.reset();
 
                         loop {
                             let step_result = guard.step(&mut new_map);

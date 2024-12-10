@@ -71,6 +71,7 @@ pub fn part_two(input: &str) -> Option<u32> {
     Some(total_rating)
 }
 
+// TODO if I make map a Vec<Vec<SomethingElse>> I can keep track of visited nodes and avoid the HashSet stuff
 fn get_paths(starting_coordinate: Coordinate, map: &Vec<Vec<u32>>) -> HashSet<Coordinate> {
     let mut paths_set = HashSet::new();
 
